@@ -1,0 +1,55 @@
+plugins {
+    id 'java'
+    id 'java-gradle-plugin'
+    id 'maven-publish'
+}
+
+group = 'me.alphamode.wisp'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+    maven {
+        url = "https://maven.fabricmc.net/"
+    }
+    maven {
+        url = 'https://plugins.gradle.org/m2/'
+    }
+}
+
+dependencies {
+    testImplementation platform('org.junit:junit-bom:5.9.1')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+
+    implementation 'com.google.code.gson:gson:2.10.1'
+
+    implementation("net.fabricmc:tiny-remapper:0.8.7")
+    implementation("net.fabricmc:mapping-io:0.2.1")
+
+    implementation("me.alphamode.wisp.env:WispEnv:1.0")
+
+    // IDEA support
+    implementation ('gradle.plugin.org.jetbrains.gradle.plugin.idea-ext:gradle-idea-ext:1.1.7')
+}
+
+gradlePlugin {
+    plugins {
+        wispGradle {
+            id = 'wisp-gradle'
+            implementationClass = 'me.alphamode.wisp.WispGradle'
+        }
+    }
+}
+
+test {
+    useJUnitPlatform()
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+        }
+    }
+}
