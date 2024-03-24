@@ -20,7 +20,6 @@ public record MinecraftVersionManifest(String version, String type, Map<String, 
 
         List<Library> libraries = new ArrayList<>();
         for (JsonElement lib : manifest.getAsJsonArray("libraries")) {
-            System.out.println(lib);
             var library = Library.fromJson(lib.getAsJsonObject());
             if (LibraryProcessor.process(library))
                 libraries.add(library);

@@ -87,7 +87,7 @@ public class RemapGameTask extends WispTask {
         }
 
         if (!wisp.clientOnly().get() && wisp.includeGameJar().get()) {
-            wisp.getLogger().log("Remapping server");
+
 
             var serverMappings = mappingProvider.getServerMappings();
 
@@ -97,6 +97,7 @@ public class RemapGameTask extends WispTask {
                     .build();
 
             if (!mappedServer.toFile().exists()) {
+                wisp.getLogger().log("Remapping server");
 
                 try (OutputConsumerPath outputConsumer = new OutputConsumerPath.Builder(mappedServer)
                         // force jar despite the .tmp extension

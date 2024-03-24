@@ -22,8 +22,12 @@ public class DownloadLibrariesTask extends WispTask {
         List<Library> libs = wisp.getVersion().get().libraries();
         for (Library lib : libs) {
             var downloadPath = WispGradleExtension.get(project).getMcCache("libs/");
-            wisp.getLogger().log("Downloading: " + lib);
-            downloader.downloadArtifact(lib.download(), downloadPath);
+            var download = lib.download();
+            var path = download.path() != null ? downloadPath.resolve(download.path()).toFile() : downloadPath.toFile();
+            if (!path.exists()) {
+                wisp.getLogger().log("Downloading: " + lib);
+                downloader.downloadArtifact(download, path);
+            }
         }
     }
 }

@@ -5,6 +5,7 @@ import org.gradle.api.Project;
 import org.gradle.wrapper.Download;
 import org.gradle.wrapper.Logger;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
@@ -16,8 +17,7 @@ public class Downloader {
         this.project = project;
     }
 
-    public Path downloadArtifact(me.alphamode.wisp.minecraft.Download artifact, Path folder) {
-        var path = artifact.path() != null ? folder.resolve(artifact.path()).toFile() : folder.toFile();
+    public Path downloadArtifact(me.alphamode.wisp.minecraft.Download artifact, File path) {
         if (!path.exists()) {
             try {
                 download.download(URI.create(artifact.url()), path);

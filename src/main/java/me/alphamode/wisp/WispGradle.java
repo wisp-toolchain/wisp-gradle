@@ -96,7 +96,7 @@ public class WispGradle implements Plugin<Project> {
                     wispApi.getVersionManifestUrl().set(foundVersion.get("url").getAsString());
                 }
 
-                var versionManifest = wisp.getMcCache("version.json").toFile();//getCacheDirectory().get().getAsFile().toPath();
+                var versionManifest = wisp.getMcCache("version.json").toFile();
 
                 if (!versionManifest.exists()) {
 
