@@ -19,7 +19,7 @@ public class WispLogger {
         this.currentIndention--;
     }
 
-    public void log(String msg) {
+    public void log(Object msg) {
         StringBuilder stringBuilder = new StringBuilder();
         for (int i = 0; i < currentIndention; i++) {
             stringBuilder.append("  ");

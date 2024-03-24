@@ -26,6 +26,10 @@ public class RunConfig {
         type = Type.SERVER;
     }
 
+    public String getName() {
+        return name;
+    }
+
     public String getMainClass() {
         return mainClass;
     }

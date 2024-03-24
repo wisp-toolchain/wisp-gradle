@@ -10,6 +10,7 @@ import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.plugins.ExtensionAware;
+import org.gradle.api.tasks.JavaExec;
 import org.gradle.plugins.ide.idea.model.IdeaModel;
 import org.jetbrains.gradle.ext.Application;
 import org.jetbrains.gradle.ext.ProjectSettings;
@@ -50,6 +51,21 @@ public class WispGradle implements Plugin<Project> {
 //        });
 
         project.afterEvaluate(proj -> {
+            var runConfigs = wispApi.getRunConfigs();
+            boolean clientOnly = wispApi.clientOnly().get();
+            boolean serverOnly = wispApi.serverOnly().get();
+
+            RunConfig clientConfig = new RunConfig("client");
+            clientConfig.client();
+
+            RunConfig serverConfig = new RunConfig("server");
+            serverConfig.server();
+
+            if (!serverOnly)
+                runConfigs.add(clientConfig);
+            if (!clientOnly)
+                runConfigs.add(serverConfig);
+
             wispApi.getModProcessor().calculateMods(project);
             List<WispTask> setup = List.of(
                     new DownloadLibrariesTask(proj),
@@ -114,9 +130,6 @@ public class WispGradle implements Plugin<Project> {
                 logger.pop();
             }
 
-            boolean clientOnly = wispApi.clientOnly().get();
-            boolean serverOnly = wispApi.serverOnly().get();
-
             var extractNatives = project.getTasks().register("extractNatives", ExtractNativesTask.class, t -> {
                 t.setDescription("Extracts the Minecraft platform specific natives.");
             });
@@ -127,20 +140,18 @@ public class WispGradle implements Plugin<Project> {
 
             });
 
+            wispApi.getRunConfigs().forEach(runConfig -> {
+                proj.getTasks().register("run" + runConfig.getName(), JavaExec.class, javaExec -> {
+                    javaExec.setGroup("wisp");
+
+                    javaExec.getMainClass().set(runConfig.getMainClass());
+                    javaExec.args("--assetIndex " + wispApi.getVersion().get().assets() + " --assetsDir " + wisp.getMcCache("assets"));
+                    javaExec.jvmArgs("-Djava.library.path=" + wisp.getMcCache("natives"));
+                    javaExec.setWorkingDir(new File(proj.getProjectDir(), runConfig.getWorkingDir()));
+                });
+            });
+
             project.getTasks().register("genIntellijRuns", task -> {
-                RunConfig clientConfig = new RunConfig("client");
-                clientConfig.client();
-
-                RunConfig serverConfig = new RunConfig("server");
-                serverConfig.server();
-
-                var runConfigs = wispApi.getRunConfigs();
-
-                if (!serverOnly)
-                    runConfigs.add(clientConfig);
-                if (!clientOnly)
-                    runConfigs.add(serverConfig);
-
                 IdeaModel ideaModel = ((IdeaModel) project.getExtensions().findByName("idea"));
 
                 if (ideaModel == null) return;
@@ -151,11 +162,12 @@ public class WispGradle implements Plugin<Project> {
                             ((ExtensionAware) settings).getExtensions().getByName("runConfigurations");
 
                     wispApi.getRunConfigs().forEach(runConfig -> {
-                        Application app = new Application(runConfig.getDisplayName(), project);
+                        Application app = new Application(runConfig.getDisplayName(), proj);
                         app.setMainClass(runConfig.getMainClass());
-                        app.setModuleName(String.format("%s.main", project.getName()));
+                        app.setModuleName(String.format("%s.main", proj.getName()));
                         app.setProgramParameters("--assetIndex " + wispApi.getVersion().get().assets() + " --assetsDir " + wisp.getMcCache("assets"));
                         app.setJvmArgs("-Djava.library.path=" + wisp.getMcCache("natives"));
+                        app.setWorkingDirectory(runConfig.getWorkingDir());
                         runConfigurations.add(app);
                     });
                 }

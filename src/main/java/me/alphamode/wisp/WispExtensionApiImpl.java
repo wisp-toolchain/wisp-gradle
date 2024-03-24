@@ -53,7 +53,7 @@ public class WispExtensionApiImpl implements WispGradleApiExtension {
         this.cacheDir = project.getObjects().fileProperty();
         this.runConfigs = project.container(RunConfig.class, RunConfig::new);
         if (!cacheDir.isPresent())
-            cacheDir.set(new File(project.getGradle().getGradleHomeDir(), "cache/wisp-gradle"));
+            cacheDir.set(new File(project.getGradle().getGradleUserHomeDir(), "caches/wisp-gradle"));
         this.logger = new WispLogger(project);
         this.processor = new ModProcessor();
     }
@@ -139,12 +139,12 @@ public class WispExtensionApiImpl implements WispGradleApiExtension {
 
     @Override
     public void runs(Action<NamedDomainObjectContainer<RunConfig>> action) {
-
+        action.execute(this.runConfigs);
     }
 
     @Override
     public NamedDomainObjectContainer<RunConfig> getRunConfigs() {
-        return null;
+        return this.runConfigs;
     }
 
     public static String readString(URL address) {
