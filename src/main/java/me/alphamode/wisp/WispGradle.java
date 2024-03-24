@@ -3,6 +3,7 @@ package me.alphamode.wisp;
 import com.google.gson.*;
 import me.alphamode.wisp.gradle.setup.*;
 import me.alphamode.wisp.minecraft.MinecraftVersionManifest;
+import me.alphamode.wisp.minecraft.RunConfig;
 import me.alphamode.wisp.tasks.*;
 import me.alphamode.wisp.util.WispConstants;
 import org.gradle.api.NamedDomainObjectContainer;
@@ -127,18 +128,18 @@ public class WispGradle implements Plugin<Project> {
             });
 
             project.getTasks().register("genIntellijRuns", task -> {
-                Application clientConfig = new Application("Minecraft Client", project);
+                RunConfig clientConfig = new RunConfig("client");
+                clientConfig.client();
 
-                clientConfig.setMainClass("me.alphamode.wisp.loader.Main");
-                clientConfig.setModuleName(String.format("%s.main", project.getName()));
-                clientConfig.setProgramParameters("--assetIndex " + wispApi.getVersion().get().assets() + " --assetsDir " + wisp.getMcCache("assets"));
-                clientConfig.setJvmArgs("-Djava.library.path=" + wisp.getMcCache("natives"));
-                clientConfig.setWorkingDirectory("run/");
+                RunConfig serverConfig = new RunConfig("server");
+                serverConfig.server();
 
-                Application serverConfig = new Application("Minecraft Server", project);
-                serverConfig.setMainClass("me.alphamode.wisp.loader.Main");
-                serverConfig.setModuleName(String.format("%s.main", project.getName()));
-                clientConfig.setWorkingDirectory("run/");
+                var runConfigs = wispApi.getRunConfigs();
+
+                if (!serverOnly)
+                    runConfigs.add(clientConfig);
+                if (!clientOnly)
+                    runConfigs.add(serverConfig);
 
                 IdeaModel ideaModel = ((IdeaModel) project.getExtensions().findByName("idea"));
 
@@ -149,14 +150,14 @@ public class WispGradle implements Plugin<Project> {
                     NamedDomainObjectContainer<RunConfiguration> runConfigurations = (NamedDomainObjectContainer<RunConfiguration>)
                             ((ExtensionAware) settings).getExtensions().getByName("runConfigurations");
 
-//                    wispApi.getRunConfigs().forEach(runConfig -> {
-//                        runConfig.
-//                    });
-
-                    if (!serverOnly)
-                        runConfigurations.add(clientConfig);
-                    if (!clientOnly)
-                        runConfigurations.add(serverConfig);
+                    wispApi.getRunConfigs().forEach(runConfig -> {
+                        Application app = new Application(runConfig.getDisplayName(), project);
+                        app.setMainClass(runConfig.getMainClass());
+                        app.setModuleName(String.format("%s.main", project.getName()));
+                        app.setProgramParameters("--assetIndex " + wispApi.getVersion().get().assets() + " --assetsDir " + wisp.getMcCache("assets"));
+                        app.setJvmArgs("-Djava.library.path=" + wisp.getMcCache("natives"));
+                        runConfigurations.add(app);
+                    });
                 }
             }).configure(task -> {
                 task.dependsOn(extractNatives, downloadResources);
