@@ -3,6 +3,7 @@ package me.alphamode.wisp.gradle.setup;
 import me.alphamode.wisp.WispGradleApiExtension;
 import me.alphamode.wisp.WispGradleExtension;
 import me.alphamode.wisp.minecraft.Library;
+import me.alphamode.wisp.util.WispConstants;
 import org.gradle.api.Project;
 import org.gradle.api.tasks.TaskAction;
 
@@ -28,6 +29,11 @@ public class DownloadLibrariesTask extends WispTask {
                 wisp.getLogger().log("Downloading: " + lib);
                 downloader.downloadArtifact(download, path);
             }
+
+            if (download.isNative())
+                project.getDependencies().add(WispConstants.MINECRAFT_NATIVES, project.files(path));
+            else
+                project.getDependencies().add(WispConstants.MINECRAFT_LIBRARIES, project.files(path));
         }
     }
 }

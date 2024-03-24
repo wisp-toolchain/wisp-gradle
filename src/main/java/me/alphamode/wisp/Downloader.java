@@ -28,10 +28,6 @@ public class Downloader {
                 throw new RuntimeException(e);
             }
         }
-        if (artifact.isNative())
-            project.getDependencies().add(WispConstants.MINECRAFT_NATIVES, project.files(path));
-        else
-            project.getDependencies().add(WispConstants.MINECRAFT_LIBRARIES, project.files(path));
         return path.toPath();
     }
 
