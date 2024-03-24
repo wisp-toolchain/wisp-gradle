@@ -1,18 +1,21 @@
 package me.alphamode.wisp;
 
-import org.gradle.api.Project;
+import java.nio.file.Path;
 
 public class WispExtensionImpl implements WispGradleExtension {
-    private final Project project;
-    private final WispGradle gradle;
+    private final WispGradleApiExtension extension;
 
-    public WispExtensionImpl(Project project, WispGradle gradle) {
-        this.project = project;
-        this.gradle = gradle;
+    public WispExtensionImpl(WispGradleApiExtension extension) {
+        this.extension = extension;;
     }
 
     @Override
-    public void minecraft(String version) {
-        this.gradle.setMcVersion(version);
+    public Path getCache(String path) {
+        return extension.getCacheDirectory().get().getAsFile().toPath().resolve(path);
+    }
+
+    @Override
+    public String getMcVersion() {
+        return extension.getMinecraftVersion().get();
     }
 }

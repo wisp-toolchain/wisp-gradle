@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'me.alphamode.wisp'
-version = '1.0-SNAPSHOT'
+version = '1.2-SNAPSHOT'
 
 repositories {
     mavenCentral()
@@ -19,13 +19,23 @@ repositories {
 }
 
 dependencies {
+    implementation gradleApi()
+
     testImplementation platform('org.junit:junit-bom:5.9.1')
     testImplementation 'org.junit.jupiter:junit-jupiter'
 
     implementation 'com.google.code.gson:gson:2.10.1'
 
-    implementation("net.fabricmc:tiny-remapper:0.8.7")
-    implementation("net.fabricmc:mapping-io:0.2.1")
+    api 'org.ow2.asm:asm:9.6'
+    api 'org.ow2.asm:asm-commons:9.6'
+    implementation 'org.ow2.asm:asm-tree:9.6'
+    implementation 'org.ow2.asm:asm-util:9.6'
+
+    implementation 'org.tomlj:tomlj:1.1.0'
+    implementation("org.vineflower:vineflower:1.9.3")
+
+    implementation("net.fabricmc:tiny-remapper:0.10.1")
+    implementation("net.fabricmc:mapping-io:0.5.0")
 
     implementation("me.alphamode.wisp.env:WispEnv:1.0")
 

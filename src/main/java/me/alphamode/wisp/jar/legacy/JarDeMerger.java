@@ -1,7 +1,10 @@
-package me.alphamode.wisp.jar;
+package me.alphamode.wisp.jar.legacy;
 
 import me.alphamode.wisp.FileSystemUtil;
-import net.fabricmc.tinyremapper.FileSystemReference;
+import me.alphamode.wisp.jar.JarMerger;
+import me.alphamode.wisp.jar.MinecraftClassMerger;
+import me.alphamode.wisp.jar.SnowmanClassVisitor;
+import me.alphamode.wisp.jar.SyntheticParameterClassVisitor;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -18,28 +21,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-public class JarMerger implements AutoCloseable {
-    public static class Entry {
-        public final Path path;
-        public final BasicFileAttributes metadata;
-        public final byte[] data;
-
-        public Entry(Path path, BasicFileAttributes metadata, byte[] data) {
-            this.path = path;
-            this.metadata = metadata;
-            this.data = data;
-        }
-    }
-
-    private static final MinecraftClassMerger CLASS_MERGER = new MinecraftClassMerger();
+public class JarDeMerger implements AutoCloseable {
+    private static final MinecraftWorldClassMerger CLASS_MERGER = new MinecraftWorldClassMerger();
     private final FileSystemUtil.Delegate inputClientFs, inputServerFs, outputFs;
     private final Path inputClient, inputServer;
-    private final Map<String, Entry> entriesClient, entriesServer;
+    private final Map<String, JarMerger.Entry> entriesClient, entriesServer;
     private final Set<String> entriesAll;
-    private boolean removeSnowmen = false;
-    private boolean offsetSyntheticsParams = false;
-
-    public JarMerger(Path inputClient, Path inputServer, File output) throws IOException {
+    public JarDeMerger(Path inputClient, Path inputServer, File output) throws IOException {
         if (output.exists()) {
             if (!output.delete()) {
                 throw new IOException("Could not delete " + output.getName());
@@ -55,14 +43,6 @@ public class JarMerger implements AutoCloseable {
         this.entriesAll = new TreeSet<>();
     }
 
-    public void enableSnowmanRemoval() {
-        removeSnowmen = true;
-    }
-
-    public void enableSyntheticParamsOffset() {
-        offsetSyntheticsParams = true;
-    }
-
     @Override
     public void close() throws IOException {
         inputClientFs.close();
@@ -70,7 +50,7 @@ public class JarMerger implements AutoCloseable {
         outputFs.close();
     }
 
-    private void readToMap(Map<String, Entry> map, Path input) {
+    private void readToMap(Map<String, JarMerger.Entry> map, Path input) {
         try {
             Files.walkFileTree(input, new SimpleFileVisitor<>() {
                 @Override
@@ -81,7 +61,7 @@ public class JarMerger implements AutoCloseable {
 
                     if (!path.getFileName().toString().endsWith(".class")) {
                         if (path.toString().equals("/META-INF/MANIFEST.MF")) {
-                            map.put("META-INF/MANIFEST.MF", new Entry(path, attr,
+                            map.put("META-INF/MANIFEST.MF", new JarMerger.Entry(path, attr,
                                     "Manifest-Version: 1.0\nMain-Class: net.minecraft.client.Main\n".getBytes(StandardCharsets.UTF_8)));
                         } else {
                             if (path.toString().startsWith("/META-INF/")) {
@@ -90,14 +70,14 @@ public class JarMerger implements AutoCloseable {
                                 }
                             }
 
-                            map.put(path.toString().substring(1), new Entry(path, attr, null));
+                            map.put(path.toString().substring(1), new JarMerger.Entry(path, attr, null));
                         }
 
                         return FileVisitResult.CONTINUE;
                     }
 
                     byte[] output = Files.readAllBytes(path);
-                    map.put(path.toString().substring(1), new Entry(path, attr, output));
+                    map.put(path.toString().substring(1), new JarMerger.Entry(path, attr, output));
                     return FileVisitResult.CONTINUE;
                 }
             });
@@ -106,7 +86,7 @@ public class JarMerger implements AutoCloseable {
         }
     }
 
-    private void add(Entry entry) throws IOException {
+    private void add(JarMerger.Entry entry) throws IOException {
         Path outPath = outputFs.get().getPath(entry.path.toString());
 
         if (outPath.getParent() != null) {
@@ -142,21 +122,21 @@ public class JarMerger implements AutoCloseable {
         entriesAll.addAll(entriesClient.keySet());
         entriesAll.addAll(entriesServer.keySet());
 
-        List<Entry> entries = entriesAll.parallelStream().map((entry) -> {
+        List<JarMerger.Entry> entries = entriesAll.parallelStream().map((entry) -> {
             boolean isClass = entry.endsWith(".class");
-            boolean isMinecraft = entriesClient.containsKey(entry) || entry.startsWith("net/minecraft") || !entry.contains("/");
-            Entry result;
+            boolean isMinecraftWorld = entriesClient.containsKey(entry) || entry.startsWith("net/minecraft/world") || !entry.contains("/");
+            JarMerger.Entry result;
             String side = null;
 
-            Entry entry1 = entriesClient.get(entry);
-            Entry entry2 = entriesServer.get(entry);
+            JarMerger.Entry entry1 = entriesClient.get(entry);
+            JarMerger.Entry entry2 = entriesServer.get(entry);
 
             if (entry1 != null && entry2 != null) {
                 if (Arrays.equals(entry1.data, entry2.data)) {
                     result = entry1;
                 } else {
                     if (isClass) {
-                        result = new Entry(entry1.path, entry1.metadata, CLASS_MERGER.merge(entry1.data, entry2.data));
+                        result = new JarMerger.Entry(entry1.path, entry1.metadata, CLASS_MERGER.mergeWorld(entry1.data, entry2.data));
                     } else {
                         // FIXME: More heuristics?
                         result = entry1;
@@ -168,13 +148,13 @@ public class JarMerger implements AutoCloseable {
                 side = "SERVER";
             }
 
-            if (isClass && !isMinecraft && "SERVER".equals(side)) {
+            if (isClass && !isMinecraftWorld && "SERVER".equals(side)) {
                 // Server bundles libraries, client doesn't - skip them
                 return null;
             }
 
             if (result != null) {
-                if (isMinecraft && isClass) {
+                if (isMinecraftWorld && isClass) {
                     byte[] data = result.data;
                     ClassReader reader = new ClassReader(data);
                     ClassWriter writer = new ClassWriter(0);
@@ -184,18 +164,18 @@ public class JarMerger implements AutoCloseable {
                         visitor = new MinecraftClassMerger.SidedClassVisitor(Opcodes.ASM9, visitor, side);
                     }
 
-                    if (removeSnowmen) {
-                        visitor = new SnowmanClassVisitor(Opcodes.ASM9, visitor);
-                    }
-
-                    if (offsetSyntheticsParams) {
-                        visitor = new SyntheticParameterClassVisitor(Opcodes.ASM9, visitor);
-                    }
+//                    if (removeSnowmen) {
+//                        visitor = new SnowmanClassVisitor(Opcodes.ASM9, visitor);
+//                    }
+//
+//                    if (offsetSyntheticsParams) {
+//                        visitor = new SyntheticParameterClassVisitor(Opcodes.ASM9, visitor);
+//                    }
 
                     if (visitor != writer) {
                         reader.accept(visitor, 0);
                         data = writer.toByteArray();
-                        result = new Entry(result.path, result.metadata, data);
+                        result = new JarMerger.Entry(result.path, result.metadata, data);
                     }
                 }
 
@@ -205,7 +185,7 @@ public class JarMerger implements AutoCloseable {
             }
         }).filter(Objects::nonNull).toList();
 
-        for (Entry e : entries) {
+        for (JarMerger.Entry e : entries) {
             add(e);
         }
     }
