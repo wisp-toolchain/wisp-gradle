@@ -10,7 +10,9 @@ import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.plugins.ExtensionAware;
+import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.tasks.JavaExec;
+import org.gradle.api.tasks.SourceSet;
 import org.gradle.plugins.ide.idea.model.IdeaModel;
 import org.jetbrains.gradle.ext.Application;
 import org.jetbrains.gradle.ext.ProjectSettings;
@@ -57,9 +59,11 @@ public class WispGradle implements Plugin<Project> {
 
             RunConfig clientConfig = new RunConfig("client");
             clientConfig.client();
+            clientConfig.sourceSet(proj.getExtensions().getByType(JavaPluginExtension.class).getSourceSets().getByName(SourceSet.MAIN_SOURCE_SET_NAME));
 
             RunConfig serverConfig = new RunConfig("server");
             serverConfig.server();
+            serverConfig.sourceSet(proj.getExtensions().getByType(JavaPluginExtension.class).getSourceSets().getByName(SourceSet.MAIN_SOURCE_SET_NAME));
 
             if (!serverOnly)
                 runConfigs.add(clientConfig);
@@ -130,13 +134,13 @@ public class WispGradle implements Plugin<Project> {
                 logger.pop();
             }
 
-            var extractNatives = project.getTasks().register("extractNatives", ExtractNativesTask.class, t -> {
+            var extractNatives = proj.getTasks().register("extractNatives", ExtractNativesTask.class, t -> {
                 t.setDescription("Extracts the Minecraft platform specific natives.");
             });
 
-            project.getTasks().register("genSources", GenerateSourcesTask.class);
+            proj.getTasks().register("genSources", GenerateSourcesTask.class);
 
-            var downloadResources = project.getTasks().register("downloadResources", DownloadAssetsTask.class, downloadAssetsTask -> {
+            var downloadResources = proj.getTasks().register("downloadResources", DownloadAssetsTask.class, downloadAssetsTask -> {
 
             });
 
@@ -151,36 +155,55 @@ public class WispGradle implements Plugin<Project> {
                 });
             });
 
-            project.getTasks().register("genIntellijRuns", task -> {
-                IdeaModel ideaModel = ((IdeaModel) project.getExtensions().findByName("idea"));
+            var mainProj = proj;
 
-                if (ideaModel == null) return;
-
-                if (ideaModel.getProject() != null) {
-                    ProjectSettings settings = ((ExtensionAware) ideaModel.getProject()).getExtensions().getByType(ProjectSettings.class);
-                    NamedDomainObjectContainer<RunConfiguration> runConfigurations = (NamedDomainObjectContainer<RunConfiguration>)
-                            ((ExtensionAware) settings).getExtensions().getByName("runConfigurations");
-
-                    wispApi.getRunConfigs().forEach(runConfig -> {
-                        Application app = new Application(runConfig.getDisplayName(), proj);
-                        app.setMainClass(runConfig.getMainClass());
-                        app.setModuleName(String.format("%s.main", proj.getName()));
-                        app.setProgramParameters("--assetIndex " + wispApi.getVersion().get().assets() + " --assetsDir " + wisp.getMcCache("assets"));
-                        app.setJvmArgs("-Djava.library.path=" + wisp.getMcCache("natives"));
-                        app.setWorkingDirectory(runConfig.getWorkingDir());
-                        runConfigurations.add(app);
-                    });
+            boolean foundParent = false;
+            while (!foundParent) {
+                var parent = mainProj.getParent();
+                if (parent == null) {
+                    parent = mainProj;
+                    foundParent = true;
                 }
-            }).configure(task -> {
-                task.dependsOn(extractNatives, downloadResources);
-                task.setGroup("wisp");
-            });
+                mainProj = parent;
+            }
+
+            IdeaModel ideaModel = ((IdeaModel) mainProj.getExtensions().findByName("idea"));
+
+            if (ideaModel == null) return;
+
+            if (ideaModel.getProject() != null) {
+                ProjectSettings settings = ((ExtensionAware) ideaModel.getProject()).getExtensions().getByType(ProjectSettings.class);
+                NamedDomainObjectContainer<RunConfiguration> runConfigurations = (NamedDomainObjectContainer<RunConfiguration>)
+                        ((ExtensionAware) settings).getExtensions().getByName("runConfigurations");
+
+                Project finalMainProj = mainProj;
+                wispApi.getRunConfigs().forEach(runConfig -> {
+                    Application app = new Application(proj.getName() + ":" + runConfig.getDisplayName(), finalMainProj);
+                    app.setMainClass(runConfig.getMainClass());
+                    logger.log(getIdeaModuleName(runConfig.getSourceSet(), proj));
+                    app.setModuleName(getIdeaModuleName(runConfig.getSourceSet(), proj));
+                    app.setProgramParameters("--assetIndex " + wispApi.getVersion().get().assets() + " --assetsDir " + wisp.getMcCache("assets"));
+                    app.setJvmArgs("-Djava.library.path=" + wisp.getMcCache("natives"));
+                    app.setWorkingDirectory(runConfig.getWorkingDir());
+                    runConfigurations.add(app);
+                });
+            }
 
             logger.pop();
             logger.log("Loaded Wisp Gradle");
         });
 
 
+    }
+
+    public static String getIdeaModuleName(SourceSet sourceSet, Project project) { // from loom I couldn't figure it out :P
+        String module = project.getName() + "." + sourceSet.getName();
+
+        while ((project = project.getParent()) != null) {
+            module = project.getName() + "." + module;
+        }
+
+        return module.replace(' ', '_');
     }
 
     protected void downloadGame(URL address, String gameVersion, WispGradleApiExtension wisp) throws IOException {

@@ -1,5 +1,8 @@
 package me.alphamode.wisp.minecraft;
 
+import org.gradle.api.tasks.SourceSet;
+import org.gradle.api.tasks.SourceSetContainer;
+
 // TODO: programArgs and jvm args
 public class RunConfig {
     private final String name;
@@ -9,6 +12,8 @@ public class RunConfig {
     private String displayName;
 
     private String workingDir = "run/";
+
+    private SourceSet sourceSet;
 
     private Type type;
 
@@ -42,6 +47,10 @@ public class RunConfig {
         return workingDir;
     }
 
+    public SourceSet getSourceSet() {
+        return sourceSet;
+    }
+
     public Type getType() {
         return type;
     }
@@ -56,6 +65,10 @@ public class RunConfig {
 
     public void workingDir(String workingDir) {
         this.workingDir = workingDir;
+    }
+
+    public void sourceSet(SourceSet sourceSet) {
+        this.sourceSet = sourceSet;
     }
 
     public void type(Type type) {
