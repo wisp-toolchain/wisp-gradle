@@ -17,13 +17,11 @@ import org.gradle.plugins.ide.idea.model.IdeaModel;
 import org.jetbrains.gradle.ext.Application;
 import org.jetbrains.gradle.ext.ProjectSettings;
 import org.jetbrains.gradle.ext.RunConfiguration;
-import org.jetbrains.gradle.ext.RunConfigurationContainer;
 
 import java.io.*;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.file.*;
 import java.util.*;
 
 public class WispGradle implements Plugin<Project> {
@@ -35,7 +33,7 @@ public class WispGradle implements Plugin<Project> {
     @Override
     public void apply(Project project) {
         this.project = project;
-        WispGradleApiExtension wispApi = project.getExtensions().create(WispGradleApiExtension.class, "wisp", WispExtensionApiImpl.class, project, this);
+        WispExtensionApiImpl wispApi = (WispExtensionApiImpl) project.getExtensions().create(WispGradleApiExtension.class, "wisp", WispExtensionApiImpl.class, project, this);
         WispGradleExtension wisp = project.getExtensions().create(WispGradleExtension.class, "wisp-impl", WispExtensionImpl.class, wispApi);
         var logger = wispApi.getLogger();
         project.getPluginManager().apply("org.jetbrains.gradle.plugin.idea-ext");
@@ -71,12 +69,7 @@ public class WispGradle implements Plugin<Project> {
                 runConfigs.add(serverConfig);
 
             wispApi.getModProcessor().calculateMods(project);
-            List<WispTask> setup = List.of(
-                    new DownloadLibrariesTask(proj),
-                    new DownloadGameTask(proj),
-                    new RemapGameTask(proj),
-                    new MergeJarsTask(proj)
-            );
+
             logger.log("Loading minecraft environment for: " + wispApi.getMinecraftVersion().get());
             logger.log("Working from: " + this.project.getProjectDir().toPath().resolve("wisp"));
 
@@ -127,10 +120,10 @@ public class WispGradle implements Plugin<Project> {
             }
 
             logger.push();
-            for (WispTask task : setup) {
-                logger.log("Running: " + task.getClass().getSimpleName());
+            for (Map.Entry<TaskType, WispTask> task : wispApi.getSetupTasks().entrySet()) {
+                logger.log("Running: " + task.getKey());
                 logger.push();
-                task.run();
+                task.getValue().run();
                 logger.pop();
             }
 

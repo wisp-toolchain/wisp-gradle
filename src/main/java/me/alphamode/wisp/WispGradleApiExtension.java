@@ -2,6 +2,8 @@ package me.alphamode.wisp;
 
 import me.alphamode.wisp.api.MinecraftJars;
 import me.alphamode.wisp.gradle.WispLogger;
+import me.alphamode.wisp.gradle.setup.TaskType;
+import me.alphamode.wisp.gradle.setup.WispTask;
 import me.alphamode.wisp.mappings.MappingProvider;
 import me.alphamode.wisp.minecraft.MinecraftVersionManifest;
 import me.alphamode.wisp.minecraft.RunConfig;
@@ -53,6 +55,8 @@ public interface WispGradleApiExtension {
     void setMinecraft(MinecraftJars minecraft);
 
     ModProcessor getModProcessor();
+
+    void setWispTask(TaskType taskType, WispTask task);
 
     static WispGradleApiExtension get(Project project) {
         return (WispGradleApiExtension) project.getExtensions().getByName("wisp");
