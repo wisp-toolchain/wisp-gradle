@@ -2,7 +2,6 @@ package me.alphamode.wisp;
 
 import me.alphamode.wisp.api.MinecraftJars;
 import me.alphamode.wisp.gradle.WispLogger;
-import me.alphamode.wisp.gradle.setup.*;
 import me.alphamode.wisp.mappings.MappingProvider;
 import me.alphamode.wisp.mappings.MojangMappingsProvider;
 import me.alphamode.wisp.minecraft.MinecraftVersionManifest;
@@ -18,8 +17,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
 
 public class WispExtensionApiImpl implements WispGradleApiExtension {
 
@@ -37,7 +34,6 @@ public class WispExtensionApiImpl implements WispGradleApiExtension {
     private final NamedDomainObjectContainer<RunConfig> runConfigs;
     private final WispLogger logger;
     private final ModProcessor processor;
-    private final Map<TaskType, WispTask> setup;
 
     private MinecraftJars minecraftJar;
 
@@ -60,12 +56,6 @@ public class WispExtensionApiImpl implements WispGradleApiExtension {
             cacheDir.set(new File(project.getGradle().getGradleUserHomeDir(), "caches/wisp-gradle"));
         this.logger = new WispLogger(project);
         this.processor = new ModProcessor();
-        this.setup = new HashMap<>(Map.of(
-                TaskType.DOWNLOAD_LIBRARIES, new DownloadLibrariesTask(project),
-                TaskType.DOWNLOAD_GAME, new DownloadGameTask(project),
-                TaskType.REMAP_GAME, new RemapGameTask(project),
-                TaskType.MERGE_JARS, new MergeJarsTask(project)
-        ));
     }
 
     @Override
@@ -135,15 +125,6 @@ public class WispExtensionApiImpl implements WispGradleApiExtension {
     @Override
     public ModProcessor getModProcessor() {
         return this.processor;
-    }
-
-    @Override
-    public void setWispTask(TaskType taskType, WispTask task) {
-        this.setup.replace(taskType, task);
-    }
-
-    public Map<TaskType, WispTask> getSetupTasks() {
-        return this.setup;
     }
 
     @Override
