@@ -1,9 +1,10 @@
 package me.alphamode.wisp.mappings;
 
-import java.nio.file.Path;
+import net.fabricmc.mappingio.tree.MemoryMappingTree;
+import net.fabricmc.tinyremapper.IMappingProvider;
 
 public interface MappingProvider {
-    Path getClientMappings();
+    MemoryMappingTree getClientMappings();
 
-    Path getServerMappings();
+    MemoryMappingTree getServerMappings();
 }

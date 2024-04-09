@@ -1,10 +1,6 @@
 package me.alphamode.wisp.tasks;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.Reader;
-import java.io.UncheckedIOException;
-import java.io.Writer;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -20,10 +16,13 @@ import javax.inject.Inject;
 
 import me.alphamode.wisp.FileSystemUtil;
 import me.alphamode.wisp.WispGradleApiExtension;
+import me.alphamode.wisp.WispGradleExtension;
 import me.alphamode.wisp.api.MinecraftJars;
 import me.alphamode.wisp.decompiler.LineNumberRemapper;
 import me.alphamode.wisp.decompiler.vineflower.VineflowerDecompiler;
 import me.alphamode.wisp.util.WispConstants;
+import net.fabricmc.mappingio.MappingWriter;
+import net.fabricmc.mappingio.format.MappingFormat;
 import net.fabricmc.mappingio.format.tiny.Tiny1FileWriter;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.file.ConfigurableFileCollection;
@@ -307,14 +306,22 @@ public abstract class GenerateSourcesTask extends DefaultTask {
     }
 
     private Path getMappings() {
-        Path inputMappings = WispGradleApiExtension.get(getProject()).getMappingsProvider().get().getClientMappings();
+        Path inputMappings = WispGradleExtension.get(getProject()).getCache("inputMappings.tiny");
+        MemoryMappingTree clientMappings = WispGradleApiExtension.get(getProject()).getMappingsProvider().get().getClientMappings();
 
         MemoryMappingTree mappingTree = new MemoryMappingTree();
 
-        try (Reader reader = Files.newBufferedReader(inputMappings, StandardCharsets.UTF_8)) {
-            MappingReader.read(reader, new MappingSourceNsSwitch(mappingTree, "named"));
+        try {
+            clientMappings.accept(new MappingSourceNsSwitch(mappingTree, "named"));
         } catch (IOException e) {
             throw new RuntimeException("Failed to read mappings", e);
+        }
+
+        try (StringWriter writer = new StringWriter()) {
+            clientMappings.accept(MappingWriter.create(writer, MappingFormat.TINY_FILE));
+            Files.writeString(inputMappings, writer.toString());
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to write source mappings");
         }
 
         final List<MappingsProcessor> mappingsProcessors = new ArrayList<>();

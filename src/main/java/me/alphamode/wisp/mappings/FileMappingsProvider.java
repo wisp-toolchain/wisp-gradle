@@ -1,22 +1,39 @@
 package me.alphamode.wisp.mappings;
 
+import net.fabricmc.mappingio.MappingReader;
+import net.fabricmc.mappingio.tree.MemoryMappingTree;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class FileMappingsProvider implements MappingProvider {
-    private final Path clientMappings, serverMappings;
+    private final MemoryMappingTree clientMappings, serverMappings;
 
     public FileMappingsProvider(Path clientMappings, Path serverMappings) {
-        this.clientMappings = clientMappings;
-        this.serverMappings = serverMappings;
+        this.clientMappings = new MemoryMappingTree();
+        this.serverMappings = new MemoryMappingTree();
+        try (Reader reader = Files.newBufferedReader(clientMappings, StandardCharsets.UTF_8)) {
+            MappingReader.read(reader, this.clientMappings);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to read client mappings", e);
+        }
+        try (Reader reader = Files.newBufferedReader(serverMappings, StandardCharsets.UTF_8)) {
+            MappingReader.read(reader, this.serverMappings);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to read client mappings", e);
+        }
     }
 
     @Override
-    public Path getClientMappings() {
+    public MemoryMappingTree getClientMappings() {
         return this.clientMappings;
     }
 
     @Override
-    public Path getServerMappings() {
+    public MemoryMappingTree getServerMappings() {
         return this.serverMappings;
     }
 }
