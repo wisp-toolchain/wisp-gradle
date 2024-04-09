@@ -42,7 +42,7 @@ public class MergeJarsTask extends WispTask {
 
             wisp.getModProcessor().process(this.merged.toPath());
             this.project.getDependencies().add(WispConstants.MINECRAFT, this.project.files(this.merged));
-            wisp.setMinecraft(new MinecraftJars(List.of(this.merged.toPath())));
+            wisp.setMinecraft(new MinecraftJars(List.of(new MinecraftJars.MinecraftJar(null, this.merged.toPath()))));
         }
     }
 }

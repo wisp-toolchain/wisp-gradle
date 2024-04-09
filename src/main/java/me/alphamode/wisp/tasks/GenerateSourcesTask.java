@@ -104,7 +104,7 @@ public abstract class GenerateSourcesTask extends DefaultTask {
 
         final MinecraftJars minecraftJar = rebuildInputJar();
         // Input jar is the jar to decompile, this may be unpicked.
-        Path inputJar = minecraftJar.jars().get(0);//.getPath();
+        Path inputJar = minecraftJar.jars().get(0).jar();//.getPath();
         // Runtime jar is the jar used to run the game
         final Path runtimeJar = inputJar;
 
@@ -162,8 +162,8 @@ public abstract class GenerateSourcesTask extends DefaultTask {
         fileArgs.add(getUnpickConstantJar().getSingleFile());
 
         // Classpath
-        for (Path minecraftJar : WispGradleApiExtension.get(getProject()).getMinecraft().jars()) {
-            fileArgs.add(minecraftJar.toFile());
+        for (MinecraftJars.MinecraftJar minecraftJar : WispGradleApiExtension.get(getProject()).getMinecraft().jars()) {
+            fileArgs.add(minecraftJar.jar().toFile());
         }
 
         for (File file : getUnpickClasspath()) {

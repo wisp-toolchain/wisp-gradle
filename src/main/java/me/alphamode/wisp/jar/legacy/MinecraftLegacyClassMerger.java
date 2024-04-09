@@ -8,7 +8,7 @@ import org.objectweb.asm.tree.MethodNode;
 
 import java.util.*;
 
-public class MinecraftWorldClassMerger {
+public class MinecraftLegacyClassMerger {
     private static final String SIDE_DESCRIPTOR = "Lme/alphamode/wisp/env/Environment;";
     private static final String ITF_DESCRIPTOR = "Lme/alphamode/wisp/env/OnlyInInterfaces;";
     private static final String ITF_LIST_DESCRIPTOR = "Lnet/fabricmc/api/EnvironmentInterfaces;";
@@ -92,7 +92,7 @@ public class MinecraftWorldClassMerger {
         }
     }
 
-    public MinecraftWorldClassMerger() {
+    public MinecraftLegacyClassMerger() {
     }
 
     public byte[] mergeWorld(byte[] classClient, byte[] classServer) {

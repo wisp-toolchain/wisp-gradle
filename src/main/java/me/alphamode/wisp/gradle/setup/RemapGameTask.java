@@ -3,6 +3,7 @@ package me.alphamode.wisp.gradle.setup;
 import me.alphamode.wisp.WispGradleApiExtension;
 import me.alphamode.wisp.WispGradleExtension;
 import me.alphamode.wisp.api.MinecraftJars;
+import me.alphamode.wisp.env.Environment;
 import me.alphamode.wisp.mappings.MappingProvider;
 import me.alphamode.wisp.util.WispConstants;
 import net.fabricmc.tinyremapper.NonClassCopyMode;
@@ -82,7 +83,6 @@ public class RemapGameTask extends WispTask {
             if (wisp.clientOnly().get()) {
                 wisp.getModProcessor().process(mappedClient);
                 this.project.getDependencies().add(WispConstants.MINECRAFT, this.project.files(mappedClient));
-                wisp.setMinecraft(new MinecraftJars(List.of(mappedClient)));
             }
         }
 
@@ -122,8 +122,9 @@ public class RemapGameTask extends WispTask {
             if (wisp.serverOnly().get()) {
                 wisp.getModProcessor().process(mappedServer);
                 this.project.getDependencies().add(WispConstants.MINECRAFT, this.project.files(mappedServer));
-                wisp.setMinecraft(new MinecraftJars(List.of(mappedServer)));
             }
         }
+
+        wisp.setMinecraft(new MinecraftJars(List.of(new MinecraftJars.MinecraftJar(Environment.CLIENT, mappedClient), new MinecraftJars.MinecraftJar(Environment.SERVER, mappedServer))));
     }
 }

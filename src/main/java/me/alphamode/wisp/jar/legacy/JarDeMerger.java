@@ -3,8 +3,6 @@ package me.alphamode.wisp.jar.legacy;
 import me.alphamode.wisp.FileSystemUtil;
 import me.alphamode.wisp.jar.JarMerger;
 import me.alphamode.wisp.jar.MinecraftClassMerger;
-import me.alphamode.wisp.jar.SnowmanClassVisitor;
-import me.alphamode.wisp.jar.SyntheticParameterClassVisitor;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -22,7 +20,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public class JarDeMerger implements AutoCloseable {
-    private static final MinecraftWorldClassMerger CLASS_MERGER = new MinecraftWorldClassMerger();
+    private static final MinecraftLegacyClassMerger CLASS_MERGER = new MinecraftLegacyClassMerger();
     private final FileSystemUtil.Delegate inputClientFs, inputServerFs, outputFs;
     private final Path inputClient, inputServer;
     private final Map<String, JarMerger.Entry> entriesClient, entriesServer;

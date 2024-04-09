@@ -16,4 +16,6 @@ public interface WispGradleExtension {
     }
 
     String getMcVersion();
+
+    boolean hasIntegratedServer();
 }

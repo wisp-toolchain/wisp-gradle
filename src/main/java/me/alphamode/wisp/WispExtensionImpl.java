@@ -18,4 +18,9 @@ public class WispExtensionImpl implements WispGradleExtension {
     public String getMcVersion() {
         return extension.getMinecraftVersion().get();
     }
+
+    @Override
+    public boolean hasIntegratedServer() {
+        return true; // TODO
+    }
 }
