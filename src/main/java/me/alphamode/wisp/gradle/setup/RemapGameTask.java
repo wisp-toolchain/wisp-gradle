@@ -93,6 +93,7 @@ public class RemapGameTask extends WispTask {
 
             var serverRemapper = TinyRemapper.newRemapper()
                     .withMappings(TinyUtils.createMappingProvider(serverMappings, "official", "named"))
+                    .renameInvalidLocals(true)
                     .rebuildSourceFilenames(true)
                     .build();
 
