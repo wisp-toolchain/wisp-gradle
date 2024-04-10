@@ -1,10 +1,12 @@
 package me.alphamode.wisp;
 
 import com.google.gson.*;
-import me.alphamode.wisp.gradle.setup.*;
+import me.alphamode.wisp.jar.minecraft.MinecraftJarProvider;
 import me.alphamode.wisp.minecraft.MinecraftVersionManifest;
 import me.alphamode.wisp.minecraft.RunConfig;
-import me.alphamode.wisp.tasks.*;
+import me.alphamode.wisp.tasks.DownloadAssetsTask;
+import me.alphamode.wisp.tasks.ExtractNativesTask;
+import me.alphamode.wisp.tasks.GenerateSourcesTask;
 import me.alphamode.wisp.util.WispConstants;
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Plugin;
@@ -17,14 +19,14 @@ import org.gradle.plugins.ide.idea.model.IdeaModel;
 import org.jetbrains.gradle.ext.Application;
 import org.jetbrains.gradle.ext.ProjectSettings;
 import org.jetbrains.gradle.ext.RunConfiguration;
-import org.jetbrains.gradle.ext.RunConfigurationContainer;
 
 import java.io.*;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.file.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 public class WispGradle implements Plugin<Project> {
     public static final Gson GSON = new GsonBuilder().registerTypeHierarchyAdapter(JvmArgs.class, new JvmArgs.Deserializer()).create();
@@ -71,12 +73,6 @@ public class WispGradle implements Plugin<Project> {
                 runConfigs.add(serverConfig);
 
             wispApi.getModProcessor().calculateMods(project);
-            List<WispTask> setup = List.of(
-                    new DownloadLibrariesTask(proj),
-                    new DownloadGameTask(proj),
-                    new RemapGameTask(proj),
-                    new MergeJarsTask(proj)
-            );
             logger.log("Loading minecraft environment for: " + wispApi.getMinecraftVersion().get());
             logger.log("Working from: " + this.project.getProjectDir().toPath().resolve("wisp"));
 
@@ -126,13 +122,8 @@ public class WispGradle implements Plugin<Project> {
                 throw new RuntimeException(e);
             }
 
-            logger.push();
-            for (WispTask task : setup) {
-                logger.log("Running: " + task.getClass().getSimpleName());
-                logger.push();
-                task.run();
-                logger.pop();
-            }
+            MinecraftJarProvider provider = wispApi.getMinecraftProvider();
+            provider.provide(proj);
 
             var extractNatives = proj.getTasks().register("extractNatives", ExtractNativesTask.class, t -> {
                 t.setDescription("Extracts the Minecraft platform specific natives.");

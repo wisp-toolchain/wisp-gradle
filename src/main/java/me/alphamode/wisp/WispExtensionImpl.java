@@ -1,17 +1,21 @@
 package me.alphamode.wisp;
 
+import org.gradle.api.Project;
+
 import java.nio.file.Path;
 
 public class WispExtensionImpl implements WispGradleExtension {
     private final WispGradleApiExtension extension;
+    private final Project project;
 
-    public WispExtensionImpl(WispGradleApiExtension extension) {
-        this.extension = extension;;
+    public WispExtensionImpl(Project project, WispGradleApiExtension extension) {
+        this.project = project;
+        this.extension = extension;
     }
 
     @Override
     public Path getCache(String path) {
-        return extension.getCacheDirectory().get().getAsFile().toPath().resolve(path);
+        return project.getRootDir().toPath().resolve("wisp").resolve(path);
     }
 
     @Override

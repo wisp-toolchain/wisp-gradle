@@ -31,13 +31,13 @@ public class JarMerger implements AutoCloseable {
         }
     }
 
-    private static final MinecraftClassMerger CLASS_MERGER = new MinecraftClassMerger();
-    private final FileSystemUtil.Delegate inputClientFs, inputServerFs, outputFs;
-    private final Path inputClient, inputServer;
-    private final Map<String, Entry> entriesClient, entriesServer;
-    private final Set<String> entriesAll;
-    private boolean removeSnowmen = false;
-    private boolean offsetSyntheticsParams = false;
+    protected static final MinecraftClassMerger CLASS_MERGER = new MinecraftClassMerger();
+    protected final FileSystemUtil.Delegate inputClientFs, inputServerFs, outputFs;
+    protected final Path inputClient, inputServer;
+    protected final Map<String, Entry> entriesClient, entriesServer;
+    protected final Set<String> entriesAll;
+    protected boolean removeSnowmen = false;
+    protected boolean offsetSyntheticsParams = false;
 
     public JarMerger(Path inputClient, Path inputServer, File output) throws IOException {
         if (output.exists()) {
@@ -70,7 +70,7 @@ public class JarMerger implements AutoCloseable {
         outputFs.close();
     }
 
-    private void readToMap(Map<String, Entry> map, Path input) {
+    protected void readToMap(Map<String, Entry> map, Path input) {
         try {
             Files.walkFileTree(input, new SimpleFileVisitor<>() {
                 @Override
@@ -106,7 +106,7 @@ public class JarMerger implements AutoCloseable {
         }
     }
 
-    private void add(Entry entry) throws IOException {
+    protected void add(Entry entry) throws IOException {
         Path outPath = outputFs.get().getPath(entry.path.toString());
 
         if (outPath.getParent() != null) {

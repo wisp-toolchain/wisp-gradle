@@ -29,7 +29,6 @@ public class RemapGameTask extends WispTask {
         return this.outputClient;
     }
 
-
     public File getMappedServer() {
         return this.outputServer;
     }

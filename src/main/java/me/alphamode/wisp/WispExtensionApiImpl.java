@@ -2,6 +2,8 @@ package me.alphamode.wisp;
 
 import me.alphamode.wisp.api.MinecraftJars;
 import me.alphamode.wisp.gradle.WispLogger;
+import me.alphamode.wisp.jar.MinecraftProvider;
+import me.alphamode.wisp.jar.minecraft.MinecraftJarProvider;
 import me.alphamode.wisp.mappings.MappingProvider;
 import me.alphamode.wisp.mappings.MojangMappingsProvider;
 import me.alphamode.wisp.minecraft.MinecraftVersionManifest;
@@ -12,6 +14,7 @@ import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
 import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.provider.Property;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
@@ -34,6 +37,7 @@ public class WispExtensionApiImpl implements WispGradleApiExtension {
     private final NamedDomainObjectContainer<RunConfig> runConfigs;
     private final WispLogger logger;
     private final ModProcessor processor;
+    private MinecraftJarProvider provider;
 
     private MinecraftJars minecraftJar;
 
@@ -125,6 +129,16 @@ public class WispExtensionApiImpl implements WispGradleApiExtension {
     @Override
     public ModProcessor getModProcessor() {
         return this.processor;
+    }
+
+    @Override
+    public  MinecraftJarProvider getMinecraftProvider() {
+        return this.provider == null ? new MinecraftProvider() : this.provider;
+    }
+
+    @Override
+    public void setMinecraftProvider(MinecraftJarProvider provider) {
+        this.provider = provider;
     }
 
     @Override
