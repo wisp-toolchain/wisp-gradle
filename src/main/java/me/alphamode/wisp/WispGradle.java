@@ -42,7 +42,11 @@ public class WispGradle implements Plugin<Project> {
         var logger = wispApi.getLogger();
         project.getPluginManager().apply("org.jetbrains.gradle.plugin.idea-ext");
 
-        project.getConfigurations().register(WispConstants.MINECRAFT_NATIVES, files -> files.setCanBeConsumed(true));
+        var configurations = project.getConfigurations();
+
+        configurations.register(WispConstants.MINECRAFT_NATIVES, files -> files.setCanBeConsumed(true));
+        configurations.register(WispConstants.MAPPINGS);
+        configurations.register(WispConstants.INTERMEDIARY_MAPPINGS);
 //        project.getConfigurations().register(WispConstants.MINECRAFT_LIBRARIES, files -> {
 //            files.setTransitive(false);
 //            files.setCanBeConsumed(false);
